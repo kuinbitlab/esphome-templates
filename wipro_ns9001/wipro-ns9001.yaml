@@ -1,0 +1,74 @@
+substitutions:
+  devicename: "wipro-ns9001"
+
+esphome:
+  name: $devicename
+  on_boot:
+    priority: 700
+    then:
+      - light.turn_on:
+          id: ns9001
+          brightness: 100%
+          cold_white: 100%
+          warm_white: 0%
+          transition_length: 0s
+
+esp8266:
+  board: esp01_1m
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "xxxx"
+  reboot_timeout: 0s
+
+ota:
+  password: "xxxx"
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  reboot_timeout: 0s
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Wipro-Ns9001 Fallback Hotspot"
+    password: "xxxx"
+
+captive_portal:
+    
+output:
+  - platform: esp8266_pwm
+    id: output_red
+    pin: GPIO4
+  - platform: esp8266_pwm
+    id: output_green
+    pin: GPIO12
+  - platform: esp8266_pwm
+    id: output_blue
+    pin: GPIO14
+  - platform: esp8266_pwm
+    id: output_warm_white
+    pin: GPIO13
+  - platform: esp8266_pwm
+    id: output_cold_white
+    pin: GPIO5
+
+# Define a light entity
+light:
+  - platform: rgbww
+    name: $devicename
+    id: ns9001
+    red: output_red
+    green: output_green
+    blue: output_blue
+    warm_white: output_warm_white
+    cold_white: output_cold_white
+    cold_white_color_temperature: 6536 K
+    warm_white_color_temperature: 2700K
+    color_interlock: true # avoids simultaneous RGB and W/W
+    gamma_correct: 1.62
+    default_transition_length: 1s

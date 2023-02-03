@@ -1,0 +1,131 @@
+esphome:
+  name: l1-bathroom
+  on_boot:
+    priority: 600
+    then:
+      - delay: 20ms
+      - script.execute: sync_at_boot
+
+esp8266:
+  board: d1_mini
+#  restore_from_flash: true
+
+# Enable logging
+logger:
+  level: info
+
+api:
+  encryption:
+    key: "xxxx"
+  reboot_timeout: 0s
+
+ota:
+  password: "xxxx"
+
+wifi:
+  ap:
+    ssid: "L1-Bathroom Fallback Hotspot"
+    password: "xxxx"
+  
+  networks:
+  - ssid: !secret wifi_ssid
+    password: !secret wifi_password
+    bssid: 6C:5A:B0:xxxx
+  power_save_mode: high
+  fast_connect: true
+  use_address: 192.168.xxxx
+  reboot_timeout: 0s
+  
+captive_portal:
+    
+switch:
+  - platform: restart
+    name: "l1-bathroom_module"
+
+light:
+  - platform: binary
+    name: "l1-bathroom_light"
+    output: relay1
+    id: light1
+    
+fan: 
+  - platform: binary
+    name: "l1-bathroom_fan"
+    output: relay2
+    id: fan1
+    
+output:   
+  - platform: gpio
+    pin: 
+     number: D1
+     inverted: true
+    id: relay1
+    
+  - platform: gpio
+    pin:
+     number: D2
+     inverted: true
+    id: relay2
+
+binary_sensor:
+  - platform: gpio
+    name: "l1-bathroom_light_s"
+    pin:
+      number: D6
+      inverted: true
+      mode:
+        input: true
+        pullup: true
+    filters:
+      - delayed_on_off: 20ms
+    id: switch1
+    internal: false
+    on_state:
+      then:
+        - script.execute: switch1_sync
+        
+  - platform: gpio
+    name: "l1-bathroom_fan_s"
+    pin:
+      number: D5
+      inverted: true
+      mode:
+        input: true
+        pullup: true
+    filters:
+      - delayed_on_off: 20ms
+    id: switch2
+    internal: false
+    on_state:
+      then: 
+        - script.execute: switch2_sync
+
+script:
+  - id: sync_at_boot
+    then:
+      - script.execute: switch1_sync
+      - script.execute: switch2_sync
+
+  - id: switch1_sync
+    then:
+      - if:
+          condition:
+            binary_sensor.is_on: switch1
+          then:
+            - light.turn_on: light1
+          else:
+            - light.turn_off: light1
+
+  - id: switch2_sync
+    then:
+      - if:
+          condition:
+            binary_sensor.is_on: switch2
+          then:
+            - fan.turn_on: fan1
+          else:
+            - fan.turn_off: fan1
+
+sensor:
+  - platform: uptime
+    name: l1-bathroom_uptime
